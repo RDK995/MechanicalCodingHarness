@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "role": "verifier",
+  "milestone": "M1",
+  "task": "M1-T1",
+  "attempt": 1,
+  "result": "PASS",
+  "base": "0123456789abcdef0123456789abcdef01234567",
+  "changed_files": [
+    "calculator.py",
+    "test_calculator.py"
+  ],
+  "snapshot": "workspace-content-sha256",
+  "worker_result_sha256": "worker-result-file-sha256",
+  "validation": {
+    "command": "python3 -m unittest test_calculator.py",
+    "exit_code": 0,
+    "artifact": ".harness/evidence/M1-T1-verifier.log",
+    "sha256": "evidence-file-sha256",
+    "ledger_key": "validation-input-key-sha256",
+    "execution": 1
+  }
+}

@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "current_milestone": "M1",
+  "requirements": {"FR1": "M1"},
+  "milestones": {
+    "M1": {
+      "outcome": "Atomic withdrawal rejection",
+      "status": "IN_PROGRESS",
+      "review_cycles": 0,
+      "review_override": null,
+      "baseline": {"commit": "BASELINE_SHA", "branch": "m1-atomic-rejection"},
+      "as_built": {"artifact": null, "result": "PENDING"},
+      "criteria": [
+        {"id": "M1-AC1", "status": "PENDING", "text": "An oversized withdrawal raises InsufficientStock and leaves stock and history unchanged.", "evidence": []}
+      ],
+      "tasks": [
+        {
+          "id": "M1-T1",
+          "scope": "Implement withdrawal rejection",
+          "tests": "python3 -m unittest",
+          "requirements": ["FR1"],
+          "constraints": ["atomic rejection"],
+          "findings": [],
+          "criteria": ["M1-AC1"],
+          "paths": ["inventory/ledger.py", "test_ledger.py"],
+          "depends_on": [],
+          "routing": {"tier": "Mid", "model": "sonnet", "reason_code": "ORDINARY_IMPLEMENTATION", "detail": "seeded review fixture"},
+          "status": "ACCEPTED",
+          "attempts": 1,
+          "commit": "SEEDED_IMPLEMENTATION",
+          "worker_result": {"routing": {"tier": "Mid", "model": "sonnet", "reason_code": "ORDINARY_IMPLEMENTATION", "detail": "seeded review fixture"}}
+        }
+      ],
+      "reviews": [],
+      "findings": [],
+      "validation": [],
+      "follow_ups": [],
+      "runtime": {
+        "schema_version": 1,
+        "preflight": {"status": "PASSED", "nonce": "seeded-review-fixture", "hook_canary": true, "foreground_canary": true},
+        "budgets": {"worker": 4, "verifier": 4, "reviewer": 3, "navigator": 2, "advisor": 2, "as-built": 1, "canary": 1, "continuation": 4},
+        "events": [],
+        "active_dispatch": null
+      }
+    }
+  }
+}

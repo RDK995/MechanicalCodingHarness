@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "current_milestone": "M1",
+  "requirements": {"FR1": "M1"},
+  "milestones": {
+    "M1": {
+      "outcome": "Caller tax rates reach the tax calculation",
+      "status": "TODO",
+      "review_cycles": 0,
+      "review_override": null,
+      "baseline": {"commit": "", "branch": ""},
+      "as_built": {"artifact": null, "result": "PENDING"},
+      "criteria": [
+        {"id": "M1-AC1", "status": "PENDING", "text": "quote(100, 0.10) returns 110.", "evidence": []},
+        {"id": "M1-AC2", "status": "PENDING", "text": "Distinct caller-provided rates produce distinct correct totals without module globals.", "evidence": []}
+      ],
+      "tasks": [],
+      "reviews": [],
+      "findings": [],
+      "validation": [],
+      "follow_ups": []
+    }
+  }
+}

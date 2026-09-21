@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "current_milestone": "M1",
+  "requirements": {"FR1": "M1"},
+  "milestones": {
+    "M1": {
+      "outcome": "Correct integer increment",
+      "status": "TODO",
+      "review_cycles": 0,
+      "review_override": null,
+      "baseline": {"commit": "", "branch": ""},
+      "as_built": {"artifact": null, "result": "PENDING"},
+      "criteria": [
+        {"id": "M1-AC1", "status": "PENDING", "text": "Positive, zero, and negative inputs return the next integer.", "evidence": []}
+      ],
+      "tasks": [],
+      "reviews": [],
+      "findings": [],
+      "validation": [],
+      "follow_ups": []
+    }
+  }
+}

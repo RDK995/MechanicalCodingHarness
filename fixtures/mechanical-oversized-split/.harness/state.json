@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "current_milestone": "M1",
+  "requirements": {"FR1": "M1", "FR2": "M1", "FR3": "M1", "FR4": "M1"},
+  "milestones": {
+    "M1": {
+      "outcome": "End-to-end cancellation, shutdown, and live proof",
+      "status": "TODO",
+      "review_cycles": 0,
+      "review_override": null,
+      "baseline": {"commit": "", "branch": ""},
+      "as_built": {"artifact": null, "result": "PENDING"},
+      "criteria": [
+        {"id": "M1-AC1", "status": "PENDING", "text": "API cancellation exposes a stable final state.", "evidence": []},
+        {"id": "M1-AC2", "status": "PENDING", "text": "Scheduler propagation prevents new work after cancellation.", "evidence": []},
+        {"id": "M1-AC3", "status": "PENDING", "text": "Worker shutdown preserves completed output.", "evidence": []},
+        {"id": "M1-AC4", "status": "PENDING", "text": "A live readiness proof exercises cancellation and shutdown.", "evidence": []}
+      ],
+      "tasks": [],
+      "reviews": [],
+      "findings": [],
+      "validation": [],
+      "follow_ups": []
+    }
+  }
+}
