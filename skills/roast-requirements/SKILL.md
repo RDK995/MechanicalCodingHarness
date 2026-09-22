@@ -76,7 +76,7 @@ open questions there instead and do not claim the gate has passed.
 
 ## Requirements Gate
 
-Downstream implementation work (the `implement` skill / orchestrator) must not start while:
+Downstream implementation work (the `implement` skill / mechanical controller) must not start while:
 
 ```
 Open Questions != None

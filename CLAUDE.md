@@ -4,9 +4,10 @@
 
 This repository is implementing the Coding Harness described in:
 
-`docs/implementation-plan.md`
+`docs/mechanical-cutover-plan.md`
 
-Treat that document as the V1 specification.
+Use that document for the current mechanical cutover.
+`docs/implementation-plan.md` is the historical V1 specification.
 
 Track implementation state in:
 
@@ -18,7 +19,8 @@ Do not use the conversation as the authoritative source of implementation state 
 
 Use this priority order:
 
-1. `docs/implementation-plan.md` — required V1 behaviour and architecture
+1. `docs/mechanical-cutover-plan.md` — current cutover scope and acceptance gates
+   (`docs/implementation-plan.md` retains historical V1 behaviour)
 2. `.harness-dev/progress.md` — current build milestone, task, evidence, blockers, and next action (completed milestones: `.harness-dev/archive/B<n>.md`, read on demand only)
 3. Repository code and configuration — actual implementation
 4. Git diff/history — actual changes
@@ -98,7 +100,7 @@ with progress recorded costs less than compacting, and loses less.
 
 ### Delegate bounded work
 
-For each task, ask the routing questions from `agents/orchestrator.md`: is it
+For each task, use the bounded routing in `agents/mechanical-controller.md`: is it
 clearly specified, bounded, low risk, and easy to verify?
 
 - All effectively yes → delegate it to a subagent, giving it a task packet rather

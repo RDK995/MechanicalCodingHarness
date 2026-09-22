@@ -108,7 +108,7 @@ Material: yes | no
 
 - `Material: yes` means the change alters a component boundary, a technology
   choice, or which component owns a responsibility. Material deviations need
-  human agreement before the milestone completes — the orchestrator must not
+  human agreement before the milestone completes — the controller must not
   approve a redesign on its own authority.
 - `Material: no` covers changes that leave the agreed structure intact, and the
-  orchestrator may record them itself.
+  human may record them before execution resumes.

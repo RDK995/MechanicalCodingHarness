@@ -52,6 +52,10 @@ def parser() -> argparse.ArgumentParser:
 
     commands.add_parser("status", help="validate state and print a compact summary")
     commands.add_parser("next-action", help="validate state and print one next action")
+    commands.add_parser("execution-status", help="check mechanical execution compatibility without mutation")
+    commands.add_parser("advance-milestone", help="recover a completed current-milestone pointer")
+    initial = commands.add_parser("init-plan", help="validate and publish initial milestones")
+    initial.add_argument("--plan", type=Path, required=True)
 
     opening = commands.add_parser("phase-open", help="open the current TODO milestone")
     opening.add_argument("--milestone", required=True)
@@ -185,7 +189,19 @@ def main() -> int:
     requirements = args.requirements or _existing_default(args.state, "requirements.md")
     store = StateStore(args.state, milestones, requirements)
     try:
-        if args.command in {"status", "next-action"}:
+        if args.command == "init-plan":
+            from harnesslib.planning import init_plan
+            from harnesslib.state import _load_object
+            store = StateStore(args.state, args.milestones or args.state.parent / "milestones.md",
+                               args.requirements or args.state.parent / "requirements.md")
+            output = init_plan(store, _load_object(args.plan, "initial plan"))
+        elif args.command == "execution-status":
+            from harnesslib.execution import execution_status
+            output = execution_status(store)
+        elif args.command == "advance-milestone":
+            from harnesslib.execution import advance
+            output = advance(store)
+        elif args.command in {"status", "next-action"}:
             store.validate()
             state = store.load()
             output = _summary(state) if args.command == "status" else next_action(state)

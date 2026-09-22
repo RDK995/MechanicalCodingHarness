@@ -7,7 +7,14 @@
   },
   "milestones": {
     "M1": {
-      "outcome": "Calculator division is available and safe against division by zero",
+      "id": "M1",
+      "title": "Safe division",
+      "outcome": "Callers can divide numbers and receive an error for a zero divisor",
+      "architecture": "N/A",
+      "requirements": [
+        "FR1",
+        "FR2"
+      ],
       "status": "TODO",
       "review_cycles": 0,
       "review_override": null,
@@ -22,23 +29,12 @@
       "criteria": [
         {
           "id": "M1-AC1",
+          "text": "The public divide function returns 3.0 for (6, 2) and raises an error for (1, 0).",
           "status": "PENDING",
-          "text": "Division returns the expected quotient",
           "evidence": []
         }
       ],
-      "tasks": [
-        {
-          "id": "M1-T1",
-          "scope": "implementation",
-          "routing": {
-            "tier": "Mid",
-            "model": "sonnet",
-            "reason_code": "ORDINARY_IMPLEMENTATION",
-            "detail": "Adds normal production behaviour behind an existing API"
-          }
-        }
-      ],
+      "tasks": [],
       "reviews": [],
       "findings": [],
       "validation": [],

@@ -1,137 +1,105 @@
 # harness
 
-A minimal Claude Code plugin that turns rough software requirements into
-reviewed, tested implementation through a controlled agentic workflow.
+A Claude Code plugin for milestone implementation with mechanical state gates,
+bounded model routing, independent verification, and fresh milestone review.
 
-## Install
+This branch contains the mechanical cutover candidate. Canonical release remains
+pending the cost/accuracy evidence in
+[the cutover plan](docs/mechanical-cutover-plan.md); local tests alone do not
+establish savings or promotion readiness.
 
-For local development/testing, point Claude Code at this plugin directory:
+## Architecture and workflow diagrams
 
-```
+See [How the mechanical harness works](docs/mechanical-workflow.md) for detailed
+diagrams of the full workflow, agent and script responsibilities, verification,
+evidence storage, retries, recovery, model routing, and release gates.
+
+## Install and prerequisites
+
+```sh
 claude --plugin-dir /path/to/this/repo
 ```
 
-Inside an already-running session, load it (or pick up changes) with:
+Use `/reload-plugins` to pick up local changes. Python 3 and Git are required;
+there is no external service or database. For mechanical execution launch with
+`CLAUDE_CODE_DISABLE_BACKGROUND_TASKS=1`. Hooks and the live foreground canary
+must pass preflight before planning tasks or dispatching product work.
 
-```
-/reload-plugins
-```
-
-No database, MCP server, or other external runtime is required.
+The target must be a Git repository with a baseline commit and a clean
+substantive worktree. The controller opens a milestone branch from HEAD. It
+stops on existing product edits or missing Git prerequisites; resolve these
+before resuming. Each independently accepted task is committed by harnessctl.
+The harness does not push, merge, delete branches, stash, or rewrite history.
 
 ## Workflow
 
-1. Run requirement roasting: `/harness:roast-requirements <your rough requirement>`
-2. Agree the requirements (answer whatever questions come back; the skill
-   won't write `Open Questions: None` until you have)
-3. For a **new** project, agree an architecture: `/harness:architect` — it
-   proposes components, boundaries and technology choices from the requirements,
-   draws them as a diagram, and writes `.harness/architecture.md` once you agree.
-   Skip this when adding to
-   an existing codebase, where the architecture already exists and the harness
-   inspects it instead.
-4. Carve an MVP if the full scope is bigger than the first thing worth having:
-   `/harness:scope-mvp` — it cuts the agreed scope down to the smallest
-   implementation that carries one real user from the entry point to a result
-   they actually wanted, asks you whatever the documents can't answer, and
-   records what was deferred and the order it comes back in. Skip it when the
-   scope is already minimal, or when nothing short of all of it is usable.
-5. Run implementation: `/harness:implement`
-6. The harness works through milestones on its own — planning them if
-   `.harness/milestones.md` doesn't exist yet, then implementing, testing, and
-   getting each one fresh-reviewed before moving to the next
-7. When every milestone is `DONE`, the harness mechanically confirms requirement
-   ownership and reports the completed milestones, evidence and follow-ups. It
-   does not run an additional project-wide review.
+1. `/harness:roast-requirements <rough requirement>` — resolve open questions.
+2. For a new project, `/harness:architect` — agree components and boundaries.
+3. Optionally `/harness:scope-mvp` — choose a minimal useful increment.
+4. `/harness:plan-milestones` — create validated milestone ownership and state.
+5. In a fresh context, `/harness:implement` — execute one current milestone.
 
-If you carved an MVP, put it in front of someone before going further — that is
-what building the small version first was for. Then re-invoke
-`/harness:scope-mvp` to promote the next increment back into scope, reordering
-the expansion if what people actually needed wasn't what the plan predicted. If
-the first version turned out not to deliver its outcome at all, go back to
-`/harness:roast-requirements` with what you learned rather than building a larger
-version of it.
+Planning creates `.harness/state.json` (authority) and `.harness/milestones.md`
+(human view). Every in-scope requirement has one owning milestone. No detailed
+future task plans are generated. Requirements, tests, diffs and evidence are
+authoritative; agent confidence is not.
 
-When the project has an agreed architecture, each completed milestone also gets
-drawn: what it *actually* built, derived from its own diff, into
-`.harness/as-built/M<n>.md`. Its milestone reviewer grades undeclared divergence
-and any existing interfaces touched by that diff. The records are not composed
-into a separate project-wide review.
+`/harness:implement-mechanical` remains a compatibility entry point using the
+same controller. Neither command falls back to legacy execution.
 
-If the harness ever stops with `BLOCKED`, that's deliberate: it hit an
-unresolved ambiguity or two failed review cycles, and it needs a decision only
-you can make, rather than continuing to guess.
+- DONE: the milestone passed independent checks and was closed; clear context
+  before implementing the next milestone.
+- SPLIT: smaller milestones were recorded; stop and start the first child fresh.
+- CONTINUE: resume persisted work in a fresh context; budgets survive re-entry.
+- BLOCKED: resolve the recorded decision or failed gate.
+- COMPLETE: all in-scope work is complete; no further agent or project review runs.
+- INTERRUPTED: a terminal contract was missing; it is never a successful result.
 
-## What it does to your repository
+Agreed architecture also causes a per-milestone `.harness/as-built/M<n>.md`
+record. The milestone reviewer evaluates code and affected interfaces. There is
+no additional project-wide review or composed drift report.
 
-Each milestone runs on its own branch — `m<n>-<slug>`, created when the
-milestone opens, off whatever `HEAD` was — and every task the harness accepts is
-committed to it. Uncommitted work already in your tree comes across to that
-branch and is committed there first, as its own commit, so the branch you were
-on is left exactly as you found it. The result is that a milestone's diff is
-`git diff <baseline> HEAD` and nothing else: the reviewer, the verifier and the
-as-built record all read it straight out of git rather than reconstructing it.
+## Existing projects
 
-The harness **never pushes, never merges, never deletes a branch, never squashes,
-and never rewrites history.** Integrating a finished milestone is your decision,
-and may be a pull request or a review it cannot see. At `DONE` it keeps the
-independently verified per-task commits. If the target is not a git repository,
-it says so once in the milestone record and runs without any of this rather than
-running `git init` behind you.
+The planning skill preserves valid plans. If only milestones exist it uses the
+existing state migration tool; ambiguous ownership requires an explicit map.
+It never uses force to overwrite state. Missing views, inconsistent pairs, or
+an initialization marker require recovery before execution.
 
-## State
+The mechanical entry gate accepts clean TODO milestones and resumable mechanical
+state. It rejects unfinished legacy tasks/reviews without creating a branch or
+dispatching work. Finish those with the
+[pinned legacy plugin](.harness-dev/legacy/README.md), then switch at a clean
+milestone boundary. Completed legacy history is retained. No conversion invents
+validation evidence. Do not run legacy execution over active mechanical state.
 
-Everything the harness needs to resume lives in versioned structured state, with
-compact Markdown views for people:
+MVP scoping works before initial planning. Later increments can be agreed and
+recorded, but activation into an existing mechanical plan remains blocked until
+incremental planning is implemented; completed history is never replanned.
 
-```
-.harness/requirements.md
-.harness/architecture.md   (new projects only)
-.harness/milestones.md
-.harness/state.json        (authoritative workflow state)
-.harness/mvp.md            (only if you carved an MVP)
-.harness/full/             (only if you carved an MVP — the unedited full scope)
-.harness/as-built/         (new projects only — one file per milestone)
-.harness/tasks/            (task packets for a milestone in flight — scratch, not status)
-.harness/reviews/          (review reports a fix cycle is answering — scratch, not status)
-.harness/evidence/         (validation artifacts keyed by task/milestone and commit)
+## Runtime records
+
+- `.harness/requirements.md`, optional `architecture.md`: agreed input.
+- `.harness/state.json`, `milestones.md`: authoritative state and checked view.
+- `.harness/tasks/`, `results/`, `reviews/`: bounded packets and result artifacts.
+- `.harness/evidence/`: immutable validation evidence and full output logs.
+- `.harness/as-built/`: architecture observations when applicable.
+- `.harness/mvp.md`, `full/`: scope decisions and preserved full-scope inputs.
+
+See [runtime-contract.md](docs/runtime-contract.md) for ownership and recovery.
+Use the supplied [initial plan example](examples/initial-plan.example.json) for
+scripted planning; `harnessctl init-plan --plan <file>` validates and publishes it.
+
+## Validation and measurement
+
+```sh
+for test_file in .harness-dev/test-*.py; do
+  PYTHONDONTWRITEBYTECODE=1 python3 "$test_file" || exit 1
+done
 ```
 
-`requirements.md` is the agreed, implementation-ready requirements.
-`architecture.md` is the agreed design for a new project — its components,
-boundaries and technology choices, plus a log of any deviation made while
-building. Milestones say which components they realise, so progress against the
-architecture is visible without a second status field to fall out of date.
-`as-built/` records what each milestone actually constructed, drawn from its
-diff rather than from what it claimed. `state.json` carries statuses, stable ids,
-requirement ownership, review cycles and artifact paths. `milestones.md` is the
-compact human-readable view and is checked against that authority on every
-transition.
-`mvp.md` and `full/` exist only on a project that was carved down to a first
-useful version: `requirements.md` and `architecture.md` then hold the MVP, so
-everything downstream implements it without needing to know it is one, and the
-untouched full scope waits under `full/` to be folded back in an increment at a
-time. `mvp.md` also records what counts as delivered, any step a person performs
-that the full system would automate, and the order the rest returns in.
-`tasks/` holds the task packets for the milestone being built, written once so a
-packet is not re-sent to every worker, verifier and retry that needs it; nothing
-reads them to learn project status. See `examples/` for what each looks
-like once filled in.
-
-## Philosophy
-
-Requirements, tests, diffs and evidence are authoritative.
-Agent confidence is not.
-
-## Measuring a run
-
-Use `python3 .harness-dev/measure-context.py <session-dir> [more...] --json report.json`
-to produce deduplicated token traffic, estimated cost, role/milestone splits,
-peak contexts, polling, repeated commands, duplicate validation, review/diff
-counts, and the harness version and commit. Price assumptions are replaceable
-with `--prices <json>`.
-
-After the behavioural fixtures and independent gates are confirmed, copy
-`examples/accuracy-evidence.example.json` and run
-`python3 .harness-dev/check-efficiency.py report.json --accuracy-evidence <file>`.
-This fails if any release threshold in the token-efficiency plan is missed.
+`measure-context.py` measures transcript-derived tokens and estimated cost.
+The [evaluation runbook](.harness-dev/mechanical-evaluation-runbook.md) pins the
+legacy comparison commit and requires all four fixture pairs and five paired
+field milestones before canonical promotion. Paid evaluation has its own
+per-invocation authorization; no cutover test launches provider work.

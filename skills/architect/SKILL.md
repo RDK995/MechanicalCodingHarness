@@ -15,7 +15,7 @@ for the exact file structure to write.
 For a **new** project, where the architecture must be *decided*.
 
 For an existing codebase the architecture is *discovered*, not decided — the
-orchestrator's repository reconnaissance already does that, and duplicating it
+milestone planner's repository reconnaissance already does that, and duplicating it
 here would be redundant. If the repository already has substantial source code,
 say so and stop rather than inventing a parallel architecture for code that
 already has one.

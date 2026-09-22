@@ -1,21 +1,23 @@
 ---
 name: implement-mechanical
-description: Opt-in experimental implementation workflow that drives one agreed milestone through mechanically gated tasks, independent verification, and fresh review with bounded model routing.
+description: Execute one milestone through mechanically gated tasks, independent verification and fresh review with bounded model routing.
 context: fork
 agent: harness:mechanical-controller
 model: sonnet
 effort: medium
 ---
 
-Drive exactly one current milestone using the mechanical controller. This path
-is opt-in while it is evaluated; do not invoke `harness:implement` or
-`harness:orchestrator`, and do not perform an overall project review.
+Drive exactly one current milestone using the mechanical controller. Require
+`.harness/requirements.md`, `.harness/milestones.md`, and `.harness/state.json`.
+If planning files are missing, direct the user to `/harness:plan-milestones` and
+stop. Do not plan in the execution context.
 
-Require `.harness/requirements.md`, `.harness/milestones.md`, and
-`.harness/state.json`. If requirements remain ambiguous, architecture exists but
-is not agreed, runtime preflight fails, or the controller returns BLOCKED,
-surface that result unchanged rather than falling back to the legacy workflow.
+The controller runs `execution-status` before branch creation or dispatch.
+Requirements must have no unresolved questions and architecture, when present,
+must be AGREED. Missing runtime capabilities, unfinished legacy work, or a
+failed gate must stop execution without falling back to legacy agents.
 
-The controller owns the complete one-milestone invocation. Its `DONE`, `SPLIT`,
-`CONTINUE`, or `BLOCKED` contract is the skill result. After DONE or SPLIT, stop
-even if another milestone remains; start it only in a fresh context.
+Return its compact DONE, SPLIT, CONTINUE, COMPLETE, or BLOCKED result unchanged.
+A missing terminal field is INTERRUPTED, never success. After DONE or SPLIT,
+stop even if another milestone remains. CONTINUE resumes in a fresh context;
+COMPLETE terminates without another dispatch or project-level review.
