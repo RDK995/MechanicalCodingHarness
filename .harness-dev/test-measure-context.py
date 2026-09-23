@@ -4,6 +4,8 @@
 import importlib.util
 import json
 from pathlib import Path
+import subprocess
+import sys
 import tempfile
 import unittest
 
@@ -145,13 +147,73 @@ class MeasurementTests(unittest.TestCase):
         self.assertIn("worker", report["by_role"])
         self.assertIn("M1", report["by_milestone"])
 
+    def test_unpriced_models_and_incomplete_maps_cannot_pass_pricing_gate(self):
+        for model, prices in (
+            ("new-model", self.measure.DEFAULT_PRICES),
+            ("claude-sonnet", {"haiku": self.measure.DEFAULT_PRICES["haiku"]}),
+            ("claude-sonnet", {"sonnet": {"input": 3}}),
+        ):
+            with self.subTest(model=model, prices=prices), tempfile.TemporaryDirectory() as directory:
+                path = Path(directory) / "agent.jsonl"
+                self.write_transcript(path)
+                path.write_text(path.read_text().replace("claude-sonnet", model))
+                row = self.measure.analyse(path, "worker", "M1", "", None, prices)
+                self.assertIsNone(row["estimated_cost_usd"])
+                report = self.measure.aggregate([row], {"version":"test", "commit":None})
+                self.assertEqual(report["summary"]["unpriced_contexts"], 1)
+                self.assertFalse(self.release.check(report, {})["all measured contexts have valid pricing"])
+
+    def test_each_response_uses_its_own_model_price(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "agent.jsonl"
+            self.write_transcript(path)
+            events = [json.loads(line) for line in path.read_text().splitlines()]
+            events[-1]["message"]["model"] = "claude-opus"
+            path.write_text("\n".join(json.dumps(e) for e in events))
+            row = self.measure.analyse(path, "worker", "M1", "", None, self.measure.DEFAULT_PRICES)
+            usage = self.measure.token_usage(events[0]["message"]["usage"])
+            expected = sum(self.measure.estimate_cost(usage, model, self.measure.DEFAULT_PRICES)
+                           for model in ("claude-sonnet", "claude-opus"))
+            self.assertAlmostEqual(row["estimated_cost_usd"], expected)
+            events[-1]["message"]["model"] = "unpriced-model"
+            path.write_text("\n".join(json.dumps(e) for e in events))
+            row = self.measure.analyse(path, "worker", "M1", "", None, self.measure.DEFAULT_PRICES)
+            self.assertIsNone(row["estimated_cost_usd"])
+
+    def test_manifest_option_is_optional_and_invalid_metadata_fails_without_a_report(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            session = root / "session"
+            self.write_transcript(session.with_suffix(".jsonl"))
+            output = root / "report.json"
+            command = [sys.executable, str(ROOT / ".harness-dev/measure-context.py"),
+                       str(session), "--json", str(output)]
+            plain = subprocess.run(command, capture_output=True, text=True)
+            self.assertEqual(plain.returncode, 0, plain.stderr)
+            self.assertNotIn("evaluation", json.loads(output.read_text()))
+            output.unlink()
+            manifest = root / "manifest.json"
+            valid = {"schema_version":1, "run_id":"run", "pair_id":"pair", "arm":"mechanical",
+                     "cohort":"known-path", "fixture":"fixture"}
+            malformed = ["{", "[]", json.dumps({**valid,"arm":"invalid"}),
+                         json.dumps({**valid,"pair_id":""}), json.dumps({**valid,"schema_version":2})]
+            for contents in malformed:
+                with self.subTest(contents=contents):
+                    manifest.write_text(contents)
+                    completed = subprocess.run(command + ["--run-manifest",str(manifest)],
+                                               capture_output=True,text=True)
+                    self.assertNotEqual(completed.returncode, 0)
+                    self.assertIn("invalid run manifest", completed.stderr)
+                    self.assertFalse(output.exists())
+
     def test_release_gate_requires_accuracy_and_efficiency(self):
         report = {"summary": {"contexts": 5, "api_turns": 25, "token_traffic": 1000,
                   "polling_violations": 0, "hard_limit_violations": [],
                   "orchestrator_median_turns": 20, "workers_over_45_turns": 0,
                   "record_only_semantic_reviews": 0, "parent_share": 0.1,
                   "coordination_peak_context": 100, "notification_re_entries": 0,
-                  "duplicate_validation_commands": 0},
+                  "duplicate_validation_commands": 0, "unpriced_contexts": 0,
+                  "estimated_cost_usd": 1.0},
                   "by_role": {role: {} for role in (
                       "skill session", "orchestrator", "worker", "verifier", "reviewer"
                   )}}
@@ -191,7 +253,8 @@ class MeasurementTests(unittest.TestCase):
                   "orchestrator_median_turns": 20, "workers_over_45_turns": 0,
                   "record_only_semantic_reviews": 0, "parent_share": 0.1,
                   "coordination_peak_context": 100, "notification_re_entries": 0,
-                  "duplicate_validation_commands": 0},
+                  "duplicate_validation_commands": 0, "unpriced_contexts": 0,
+                  "estimated_cost_usd": 1.0},
                   "by_role": roles}
         accuracy = {"behavioural_fixtures_pass": True, "independent_verification": True,
                     "independent_milestone_review": True}

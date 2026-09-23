@@ -145,6 +145,28 @@ class HarnessComparisonTests(unittest.TestCase):
         with self.assertRaisesRegex(self.comparison.ComparisonError, "exactly two arms"):
             self.comparison.compare(reports, self.evidence(reports))
 
+    def test_unpriced_context_in_either_arm_rejects_promotion(self):
+        for arm in ("legacy", "mechanical"):
+            for missing in ("summary", "context", "both"):
+                with self.subTest(arm=arm, missing=missing):
+                    reports = self.complete_campaign()
+                    report = next(r for r in reports if r["evaluation"]["arm"] == arm)
+                    if missing in {"summary", "both"}:
+                        report["summary"]["unpriced_contexts"] = 1
+                    if missing in {"context", "both"}:
+                        report["contexts"][0]["estimated_cost_usd"] = None
+                    # Keep the old numeric partial total to reproduce the review bug.
+                    with self.assertRaisesRegex(self.comparison.ComparisonError, "unpriced"):
+                        self.comparison.compare(reports, self.evidence(reports))
+
+    def test_unknown_or_invalid_total_is_rejected(self):
+        for cost in (None, float("nan"), float("inf"), -1):
+            with self.subTest(cost=cost):
+                reports = self.complete_campaign()
+                reports[0]["summary"]["estimated_cost_usd"] = cost
+                with self.assertRaisesRegex(self.comparison.ComparisonError, "invalid cost"):
+                    self.comparison.compare(reports, self.evidence(reports))
+
 
 if __name__ == "__main__":
     unittest.main()

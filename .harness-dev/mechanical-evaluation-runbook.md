@@ -98,6 +98,20 @@ ownership, and checks independent task verification and milestone review. The
 measurement is derived from persisted transcripts, never from a model's cost or
 token claim.
 
+Campaign measurement passes its frozen run manifest through `--run-manifest`.
+The resulting report includes schema-v1 `evaluation` metadata: run ID, pair ID,
+arm, cohort, and fixture. Standalone measurements may omit this option, but
+paired comparison requires it.
+
+All contexts in both arms must have valid pricing before savings are compared.
+A report may display a partial total for diagnosis, but unpriced contexts,
+missing price components, and non-finite or negative costs cannot certify a
+release. Supply a complete `--prices <json>` map to `measure-context.py` and
+remeasure the staged sessions if necessary. Rates are keyed by exact model name
+or the existing Haiku/Sonnet/Opus families and contain `input`, `cache_creation`,
+`cache_read`, and `output` USD per million tokens. Model changes within a session
+are priced per response; any unpriced response makes the context unpriced.
+
 After all eight fixture runs have evidence:
 
 ```bash

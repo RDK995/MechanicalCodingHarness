@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 from collections import Counter, defaultdict
 import json
+import math
 from pathlib import Path
 import re
 import statistics
@@ -88,8 +89,11 @@ def model_family(model):
 
 
 def estimate_cost(usage, model, prices):
-    rate = prices.get(model_family(model))
-    if not rate:
+    rate = prices.get(model, prices.get(model_family(model)))
+    if not isinstance(rate, dict) or any(
+        type(rate.get(key)) not in {int, float}
+        or not math.isfinite(rate[key]) or rate[key] < 0 for key in usage
+    ):
         return None
     return sum(usage[key] * rate[key] / 1_000_000 for key in usage)
 
@@ -161,12 +165,14 @@ def analyse(path, role, description, configured_model, milestone_override, price
     raw_role = role.removeprefix("harness:")
     role = raw_role.removeprefix("mechanical-")
     contexts, total_usage, tools, commands, model_counts = [], Counter(), Counter(), [], Counter()
+    turn_costs = []
     for turn in turns(path):
         usage = turn["usage"]
         total_usage.update(usage)
         contexts.append(sum(usage[key] for key in ("input", "cache_creation", "cache_read")))
         model = turn["model"] or configured_model
         model_counts[model] += 1
+        turn_costs.append(estimate_cost(usage, model, prices))
         for tool in turn["tools"]:
             tools[tool.get("name", "unknown")] += 1
             command = command_from(tool)
@@ -196,7 +202,7 @@ def analyse(path, role, description, configured_model, milestone_override, price
         "median_context": int(statistics.median(contexts)),
         "tokens": usage,
         "token_traffic": sum(usage.values()),
-        "estimated_cost_usd": estimate_cost(usage, model, prices),
+        "estimated_cost_usd": None if any(cost is None for cost in turn_costs) else sum(turn_costs),
         "tools": dict(tools),
         "polling_commands": poll_commands,
         "repeated_commands": {key: value for key, value in command_counts.items() if value > 1},
@@ -328,15 +334,34 @@ def print_report(report):
               f"tokens={values['tokens']:>13,} share={share:>6.1%} cost=${values['cost']:.2f}")
 
 
+def evaluation_from_manifest(path):
+    """Attach only the frozen run identity required by paired comparison."""
+    manifest = json.loads(path.read_text())
+    if not isinstance(manifest, dict) or manifest.get("schema_version") != 1:
+        raise ValueError("run manifest must be a schema-v1 object")
+    fields = ("run_id", "pair_id", "arm", "cohort", "fixture")
+    for field in fields:
+        if not isinstance(manifest.get(field), str) or not manifest[field].strip():
+            raise ValueError(f"run manifest requires nonempty {field}")
+    if manifest["arm"] not in {"legacy", "mechanical"}:
+        raise ValueError("run manifest arm must be legacy or mechanical")
+    return {"schema_version": 1, **{field: manifest[field] for field in fields}}
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("session_dirs", nargs="+")
     parser.add_argument("--top-level-role", default="skill session")
     parser.add_argument("--milestone", help="label every supplied session with this milestone")
     parser.add_argument("--prices", type=Path, help="JSON price map in USD per million tokens")
+    parser.add_argument("--run-manifest", type=Path, help="frozen campaign run manifest supplying evaluation metadata")
     parser.add_argument("--json", type=Path, dest="json_path", help="also write machine-readable report")
     parser.add_argument("--harness-repo", type=Path, default=Path(__file__).resolve().parents[1])
     args = parser.parse_args()
+    try:
+        evaluation = evaluation_from_manifest(args.run_manifest) if args.run_manifest else None
+    except (OSError, ValueError) as error:
+        parser.error(f"invalid run manifest: {error}")
     prices = json.loads(args.prices.read_text()) if args.prices else DEFAULT_PRICES
     rows = []
     for directory in args.session_dirs:
@@ -344,6 +369,8 @@ def main():
     if not rows:
         parser.error("no assistant contexts found in the supplied session directories")
     report = aggregate(rows, harness_identity(args.harness_repo))
+    if evaluation is not None:
+        report["evaluation"] = evaluation
     print_report(report)
     if args.json_path:
         args.json_path.write_text(json.dumps(report, indent=2) + "\n")

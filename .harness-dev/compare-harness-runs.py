@@ -75,6 +75,11 @@ def compare(reports: list[dict], accuracy: dict) -> dict:
         if not isinstance(run_id, str) or not run_id or run_id in run_ids:
             raise ComparisonError("evaluation run ids must be present and unique")
         run_ids.add(run_id)
+        if not RELEASE.complete_pricing(report):
+            raise ComparisonError(
+                f"run {run_id} contains unpriced or invalid cost data; "
+                "supply a complete price map and remeasure before comparing savings"
+            )
         if evaluation["arm"] not in {"legacy", "mechanical"}:
             raise ComparisonError("evaluation arm must be legacy or mechanical")
         pairs.setdefault(evaluation["pair_id"], []).append(report)

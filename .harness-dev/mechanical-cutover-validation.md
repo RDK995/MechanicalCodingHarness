@@ -62,3 +62,24 @@ gates. All nine parse with Mermaid 11.17.2; README/document local links resolve.
 The parser was installed only in a temporary directory, with no repository
 package dependency. Python bytecode caches are excluded through `.gitignore`.
 Publishing a draft PR for review does not satisfy the canonical release gate.
+
+## PR review fixes — 2026-09-23
+
+- `measure-context.py` accepts `--run-manifest`, validates its schema and run
+  identity, and writes the `evaluation` metadata consumed by paired comparison.
+  A regression test invokes the real measurement CLI through `measure_run()`
+  for both arms, including two synthetic continuations, then compares the reports.
+- Cost comparison rejects unpriced or invalid data in either arm before
+  calculating savings. Standalone release checking also fails its pricing gate.
+  Displayed partial totals remain diagnostic only.
+- Response-level pricing handles model changes within a transcript; an unknown
+  model or incomplete rate map makes the context unpriced. Exact model rates
+  can be supplied alongside family rates.
+- Regression coverage includes malformed manifests, measurements without a
+  manifest, incomplete price maps, mixed models, both arms, stale partial
+  totals, and invalid numeric costs.
+- Focused verification: 28 tests pass across measurement, comparison and campaign
+  suites. Full verification: all 14 suites pass, 130 tests total, using
+  `PYTHONDONTWRITEBYTECODE=1 python3 <test-file>` for every active suite.
+- No paid campaign or model invocation was launched. Plugin runtime files and the
+  previously recorded packaged runtime hash are unchanged.

@@ -117,6 +117,38 @@ class MechanicalCampaignTests(unittest.TestCase):
         self.assertFalse(evidence["behavioural_fixtures_pass"])
         self.assertTrue(evidence["no_false_pass"])
 
+    def test_measure_run_cli_attaches_manifest_and_produces_comparable_reports(self):
+        comparison = load("campaign_comparison", ROOT / ".harness-dev/compare-harness-runs.py")
+        manifests = [item for item in self.run_manifests() if item["cohort"] == "known-path"]
+        reports = []
+        for manifest in manifests:
+            # Stage two synthetic continuations; no provider invocation is needed.
+            manifest["invocations"] = [{"session_id": sid} for sid in manifest["session_ids"][:2]]
+            manifest["status"] = "COMPLETE"
+            path = self.output / "runs" / f"{manifest['run_id']}.json"
+            path.write_text(json.dumps(manifest))
+            for invocation in manifest["invocations"]:
+                transcript = self.output / "evidence" / manifest["run_id"] / f"{invocation['session_id']}.jsonl"
+                transcript.parent.mkdir(parents=True, exist_ok=True)
+                transcript.write_text(json.dumps({"type":"assistant", "message":{
+                    "id":"response", "model":"claude-sonnet", "content":[],
+                    "usage":{"input_tokens":100,"output_tokens":20}}}) + "\n")
+            report = self.campaign_module.measure_run(self.output, manifest["run_id"])
+            self.assertEqual(report["evaluation"], {key:manifest[key] for key in (
+                "schema_version", "run_id", "pair_id", "arm", "cohort", "fixture")})
+            self.assertEqual(report["summary"]["contexts"], 2)
+            self.assertEqual(report["summary"]["token_traffic"], 240)
+            reports.append(report)
+        evidence = {"schema_version":1, "runs":{
+            item["run_id"]:{field:True for field in comparison.ACCURACY_FIELDS}
+            for item in manifests if item["arm"] == "mechanical"}}
+        result = comparison.compare(reports, evidence)
+        self.assertEqual(len(result["pairs"]), 1)
+        self.assertEqual(result["pairs"][0]["pair_id"], manifests[0]["pair_id"])
+        # One synthetic pair is not release evidence.
+        self.assertFalse(result["ready_for_canonical"])
+        self.assertFalse(self.marker.exists())
+
 
 if __name__ == "__main__":
     unittest.main()

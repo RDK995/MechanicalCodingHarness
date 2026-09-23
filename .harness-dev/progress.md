@@ -9,7 +9,7 @@ validation passes, canonical promotion evidence remains outstanding.
 Completed: validated initial planning and planner skill; default/compatibility
 mechanical entry points; read-only legacy compatibility gate and pointer recovery;
 legacy archive with pinned baseline; docs, examples, test inventory, and campaign
-packaging/measurement updates. All 14 active suites pass (124 tests). Native
+packaging/measurement updates. All 14 active suites pass (130 tests after the 2026-09-23 review fixes). Native
 Claude plugin validation and exported-package reference checks pass.
 
 Plan: `docs/mechanical-cutover-plan.md`.
@@ -21,6 +21,16 @@ gates. No paid invocation was authorized or launched, and nothing was merged.
 Use an explicitly pinned legacy ref for new campaigns. Incremental activation of
 new scope into an existing mechanical plan remains a separate follow-up; the MVP
 skill now stops before mutating active inputs in that case.
+
+## PR review fixes (2026-09-23)
+
+Implemented campaign run-manifest metadata in measurement and rejection of
+unpriced/invalid cost data before savings evaluation, for either arm. Pricing
+now follows each response's model so a model switch cannot hide an unpriced
+response. All 14 suites pass (130 tests), including real campaign measurement
+CLI integration and unpriced-model regression coverage. No paid runs launched;
+canonical cost/accuracy evidence remains pending. See the validation record's
+PR review fixes section for details.
 
 ## Diagram documentation and PR preparation (2026-09-22)
 

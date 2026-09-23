@@ -3,6 +3,7 @@
 
 import argparse
 import json
+import math
 from pathlib import Path
 
 
@@ -11,10 +12,24 @@ COORDINATION_ROLES = {"controller", "orchestrator"}
 CONTROLLER_ROLES = {"skill session", "parent", "controller"}
 
 
+def complete_pricing(report):
+    """Partial totals may be displayed, but must never certify cost savings."""
+    def valid_cost(value):
+        return type(value) in {int, float} and math.isfinite(value) and value >= 0
+
+    summary = report["summary"]
+    return (
+        summary.get("unpriced_contexts") == 0
+        and valid_cost(summary.get("estimated_cost_usd"))
+        and all(valid_cost(row.get("estimated_cost_usd")) for row in report.get("contexts", []))
+    )
+
+
 def check(report, accuracy):
     summary = report["summary"]
     observed_roles = set(report.get("by_role", {}))
     gates = {
+        "all measured contexts have valid pricing": complete_pricing(report),
         "at least one context was measured": summary.get("contexts", 0) > 0,
         "measured traffic and API turns are nonzero": (
             summary.get("api_turns", 0) > 0 and summary.get("token_traffic", 0) > 0
