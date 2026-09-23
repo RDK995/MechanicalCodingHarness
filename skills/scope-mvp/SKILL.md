@@ -42,7 +42,8 @@ built. That is most projects.
 It does not apply when:
 
 - **The full scope is already minimal.** If nothing can come out without breaking
-  the path to a result, say so and send the user to `implement`.
+  the path to a result, say so and send the user to `plan-milestones` (or
+  `implement` if a valid plan already exists).
 - **Nothing short of the whole thing is usable.** Some scopes are all-or-nothing
   for regulatory, contractual or integration reasons. Name the reason and stop
   rather than carving a version that cannot be released.
@@ -66,6 +67,10 @@ IF any milestone is not TODO:
     STOP — the project is mid-build. Re-scoping now would orphan the evidence
     already recorded against milestones planned for a different scope. Tell the
     human what has been built and let them decide.
+
+Read .harness/state.json, if present
+IF it disagrees with milestones, has tasks, evidence, runtime, or started work:
+    STOP — preserve the existing planning pair and resolve its state first.
 ```
 
 An MVP carved from ambiguous requirements ships the wrong thing quickly. The gate
@@ -264,6 +269,8 @@ Only after explicit agreement:
        .harness/milestones.md     -> .harness/full/milestones.md     (if present,
                                      all TODO — they were planned for a scope
                                      that is no longer the one being built)
+       .harness/state.json        -> .harness/full/state.json      (with its
+                                     matching untouched all-TODO milestone view)
 
 2. Write .harness/requirements.md — the MVP scope, using the requirements
    template. Goal narrowed to the outcome from Step 1; in-scope functional
@@ -281,19 +288,22 @@ Move the full documents; never edit them in place. They are what the expansion i
 measured against, and a full scope that has been quietly trimmed to match the MVP
 cannot serve that purpose.
 
-Then tell the human to `/clear` and run `/harness:implement`, which will plan
-milestones against the MVP scope with no knowledge that it is one — which is the
-point.
+Then tell the human to `/clear` and run `/harness:plan-milestones`, then use
+`/harness:implement` in a fresh context. Planning uses the MVP scope.
 
 ## Expanding later
 
 Once every MVP milestone is `DONE`, and someone has actually used it, re-invoke
-this skill. It reads `.harness/mvp.md`, takes the next increment,
-folds that increment's requirements and components back from `.harness/full/` into
-`.harness/requirements.md` and `.harness/architecture.md`, and records the
-promotion under `## Decisions` with the date and what prompted it. Hand back to
-`implement`, which plans new milestones for the added scope. Milestones already
-`DONE` stay `DONE` and are not re-planned.
+this skill to agree the next increment. Read `.harness/mvp.md` and the preserved
+full scope, and record the proposed increment under `## Decisions` with the date
+and what prompted it. Preserve completed milestones and evidence.
+
+The current mechanical planner initializes a new plan; it cannot append scope
+to an existing plan. Until a validated incremental-planning operation exists,
+return BLOCKED for promotion into an already planned project before modifying
+its active requirements, architecture, state, or milestone view. Explain that
+the agreed increment is recorded but has not been activated. Do not claim
+`implement` will plan it or bypass ownership validation by hand-editing state.
 
 Two things are worth checking before promoting anything.
 

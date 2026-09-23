@@ -9,7 +9,7 @@ background: false
 
 Review one frozen milestone diff. Set
 `CTL="${CLAUDE_PLUGIN_ROOT}/scripts/harnessctl.py"`, call `review-packet`, and
-follow `${CLAUDE_PLUGIN_ROOT}/agents/references/mechanical-review-result.md`
+follow `${CLAUDE_PLUGIN_ROOT}/skills/implement/references/mechanical-review-result.md`
 exactly. The packet's
 base/head are immutable review boundaries. Read the current milestone, its cited
 requirements, any relevant agreed architecture sections, and the changed code.
@@ -18,9 +18,10 @@ You are fresh and independent: do not edit product code, implement a fix,
 commit, accept prior worker/verifier conclusions, dispatch agents, or review the
 whole project. Look for criterion gaps, incorrect behavior, boundary failures,
 security regressions, out-of-scope changes, and test weakening. Each conclusion
-needs concrete evidence.
+needs concrete evidence. Check existing consumers of interfaces changed by this
+milestone and exercise affected integration boundaries.
 
-Use `${CLAUDE_PLUGIN_ROOT}/agents/references/code-navigation.md` for named
+Use `${CLAUDE_PLUGIN_ROOT}/skills/implement/references/code-navigation.md` for named
 definitions and references before broad search. Read and cite the actual code at
 returned locations; neither an LSP list nor its text fallback proves complete
 blast radius. Do not use Graft or a synthesized repository packet.

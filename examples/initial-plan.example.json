@@ -1,0 +1,20 @@
+{
+  "milestones": [
+    {
+      "id": "M1",
+      "title": "Safe division",
+      "outcome": "Callers can divide numbers and receive an error for a zero divisor",
+      "architecture": [],
+      "requirements": [
+        "FR1",
+        "FR2"
+      ],
+      "criteria": [
+        {
+          "id": "M1-AC1",
+          "text": "The public divide function returns 3.0 for (6, 2) and raises an error for (1, 0)."
+        }
+      ]
+    }
+  ]
+}

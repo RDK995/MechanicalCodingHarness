@@ -14,7 +14,7 @@ Check that the implementation meets every owned criterion, stays in scope, does
 not weaken or bypass tests, and has no obvious boundary failure.
 
 For a named boundary or caller, use
-`${CLAUDE_PLUGIN_ROOT}/agents/references/code-navigation.md` before broad search.
+`${CLAUDE_PLUGIN_ROOT}/skills/implement/references/code-navigation.md` before broad search.
 The output is a bounded location list, not evidence by itself; inspect the
 targeted code spans. Keep any text fallback within task paths.
 

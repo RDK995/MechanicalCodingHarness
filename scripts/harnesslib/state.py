@@ -431,6 +431,8 @@ class StateStore:
         return _load_object(self.state_path, "state")
 
     def validate(self) -> None:
+        if self.state_path.with_name(self.state_path.name + ".initializing").exists():
+            raise HarnessError("interrupted initialization: recover the planning pair before execution")
         if self.milestones_path is not None and not self.milestones_path.exists():
             raise HarnessError(f"milestone view does not exist: {self.milestones_path}")
         if self.requirements_path is not None and not self.requirements_path.exists():

@@ -1,3 +1,7 @@
+> Current mechanical cutover: see [mechanical-cutover-plan.md](mechanical-cutover-plan.md).
+> This file preserves historical V1 design and evidence; its legacy execution
+> instructions are superseded by the active mechanical runtime contract.
+
 # Claude Coding Harness — Implementation Plan
 
 ## 1. Objective

@@ -13,10 +13,12 @@ Implement exactly the milestone/task named in the prompt. Set
 commits, change acceptance criteria, weaken tests, dispatch agents, or repair
 unrelated failures.
 
-Make the smallest complete change satisfying the packet.
+Make the smallest complete change satisfying the packet. Follow
+`${CLAUDE_PLUGIN_ROOT}/skills/implement/references/engineering-practices.md` for behaviour
+tests, API preservation, and bounded refactoring.
 
 When a named symbol must be traced beyond the immediately known file, use
-`${CLAUDE_PLUGIN_ROOT}/agents/references/code-navigation.md` before broad Grep or
+`${CLAUDE_PLUGIN_ROOT}/skills/implement/references/code-navigation.md` before broad Grep or
 Glob. Treat returned locations as leads, keep fallbacks within packet paths, and
 read the relevant spans yourself.
 

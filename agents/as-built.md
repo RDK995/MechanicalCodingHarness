@@ -144,7 +144,7 @@ flowchart TD
 - **Never edit anything but your own file.** Not source, not tests, not
   `architecture.md`, not `milestones.md`. You write one file under
   `.harness/as-built/` and nothing else. Recording a deviation in
-  `architecture.md` is the orchestrator's job and requires a materiality
+  `architecture.md` requires an explicit human decision and a materiality
   judgement you are explicitly not making.
 - **Never echo a claim as an observation.** Every component and edge you report
   traces to a file in the change set. If the milestone says it built `C4` and the
@@ -158,7 +158,7 @@ flowchart TD
 - **Never let uncertainty become a claim in either direction.** An unattributable
   file goes under `Unmapped`; a suspected edge you cannot cite is not drawn.
 - **Never block the build.** If you cannot produce the file, return `BLOCKED`
-  with the error. The as-built record is evidence, not a gate, and a milestone
-  that is otherwise `DONE` stays `DONE`.
+  with the error. The controller owns completion and records this outcome through harnessctl;
+  do not change milestone state yourself.
 - **Keep the diagram at component level.** Files, classes and functions belong to
   the implementation; a diagram that tracks them is stale on the next commit.

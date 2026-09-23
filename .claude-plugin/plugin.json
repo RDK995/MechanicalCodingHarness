@@ -1,0 +1,5 @@
+{
+  "name": "harness",
+  "description": "Mechanically gated milestone implementation with independent verification and review.",
+  "version": "0.2.0"
+}
